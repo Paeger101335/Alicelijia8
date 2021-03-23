@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    .myclass {
+      color: pink;
+    }
+  </style>
+  <body>
+    <script src="../dist/umd/vue.js"></script>
+    <div id="app" class="myclass" style="color: red; font-size: 14px">
+      hello
+      {{name}}{{name}}{{name}}{{name}}{{name}}{{name}}{{name}}{{name}}{{name}}{{name}}{{name}}{{name}}
+      <ul>
+        {{ hobbies }}
+        <li id="1">{{school.mid}}</li>
+        <li id="2">{{school.high}}</li>
+      </ul>
+    </div>
+    <script>
+      let vm = new Vue({
+        el: "#app",
+        data() {
+          return {
+            name: "jiajia",
+            age: 28,
+            school: {
+              mid: "初中",
+              high: "高中",
+            },
+            hobbies: [{ like: "打多多" }, { favorite: "摸多多" }],
+          };
+        },
+        computed() {},
+        watch() {},
+        beforeCreate() {
+          // console.log("user1", this.age);
+        },
+        created() {
+          // console.log("user2", this.age, this.$el);
+        },
+        mounted() {
+          // console.log("3333", this.$el);
+        },
+      });
+      setTimeout(() => {
+        vm.hobbies.push(1);
+        vm.hobbies.push(2);
+        vm.hobbies.push(3);
+        vm.hobbies.push(4);
+        // 依赖收集
+        // 希望数据变化可以自动的重新执行我们渲染watcher
+        // vm._update(vm._render());
+      }, 1000);
+      // vm._data.school.mid = { name: "bobo" };//...vm._data
+      // vm._data.school = {
+      //   ...vm._data.school,
+      //   small: "小学",
+      // };
+      // console.log(
+      //   "原有的数组join方法",
+      //   vm.hobbies.filter((item) => item.like !== "打多多")
+      // );
+      // console.log("vm", vm._data, vm.hobbies.push({ small: "小学" })); //此时data的属性都变为了响应式的
+    </script>
+  </body>
+</html>
