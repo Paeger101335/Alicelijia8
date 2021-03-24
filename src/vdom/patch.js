@@ -8,7 +8,7 @@ export function patch(oldVnode, vnode) {
     const parentElm = oldElm.parentNode;
     // 根据vdom生成真是的dom
     let el = createElm(vnode);
-    console.log("转换后的真实dom",el)
+    // console.log("转换后的真实dom",el)
     // 插入根元素的 nextSibling
     parentElm.insertBefore(el, oldElm.nextSibling);
     // 移除旧节点

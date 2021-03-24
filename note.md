@@ -294,6 +294,37 @@ function proxy(vm,source,key){
 
 ## 三、模板编译
 
+### 在入口init中调用 $mount方法，
+
+```javascript
+Vue.prototype._init = function (){
+    const vm = this;
+    vm.$options = options;
+    // 初始化页面
+    initState(vm);
+    //如果用户没有写render函数，需要手动的挂载
+    if(vm.$options.el){
+        vm.$mount(vm.$options.el);
+    }
+}
+Vue.prototype.$mount = function(el){
+    const vm = this;
+    const options = vm.$options;
+    el = docuemnt.querySelector(el);
+    // r如果没有render方法
+    if(!options.render){
+        let tempalte = options.tempalte;
+        if(!template && el){
+            tempalte = el.outerHTML;
+        }
+        const render = compileToFunction(template);
+        options.render = render;
+    }
+    // 将元素挂载
+	mountComponent(vm, el);
+}
+```
+
 >  页面挂载，如果页面用户传入了 el, 则需要手动的帮助用户挂载
 
 1.  将 template 通过parseHTML 转换AST 语法树
@@ -416,7 +447,6 @@ function parseStartTag(){
   >
   > 3 维护一个所有的元素放入一个堆栈中
 
-  
 
 ```javascript
 let root;
@@ -501,6 +531,59 @@ render(){
 }
 ```
 
+#### 通过generator将代码生成
+
+```javascript
+function generate(el) {
+    // 将孩子属性区分开来
+    let children = getChildren(el);
+    let code = `_c('${el.tag}',${
+        el.attrs.length?`${genProps(el.attrs)}`:'undefined'
+    }${
+        children? `,${children}`:''
+    })`;
+    return code;
+}
+let code = generate(root);
+```
+
+#### genProps
+
+````javascript
+// style="color: red; font-size: 14px" =>  {color:red,font-size:14px}
+// 生成属性 
+function genProps(attrs){
+    let str = "";
+    for(let i = 0; i<attrs.length; i++){
+        let attr = attrs[i];
+        if(attr.name === "style"){
+            let obj = {};
+            arrt.value.split(";").forEach(item =>{
+                let [key ,value ] = item.split(":");
+                obj[key] = value;
+		   })
+            attr.value = obj;
+        }
+        str += `${attr.name}:${JSON.stringify(attr.value)},`;
+    }
+    // 切除最后一个逗号
+    return `{${str.slice(0,-1)}}`
+}
+````
+
+#### getChildren
+
+```javascript
+function getChildrend(el) {
+     const children = el.children;
+     if (children) {
+        return `${children.map(c=>gen(c)).join(',')}`
+    } else {
+        return false;
+    }
+}
+```
+
 #### 目前只对元素+ 文本进行解析
 
 ```javascript
@@ -533,36 +616,50 @@ function gen(node){
             // 下一次开始匹配的位置
             lastIndex = index + match[0].length;
         }
-        //解决
+        
+        //解决 a {{ b }} c，最后一个c无法匹配到，或者说只有文本的情况
+        if(lastIndex < text.lenght){
+            // 切割最后一个元素
+		   tokens.push(JSON.stringify(text.slice(lastIndex)));
+        }
+        return `_v${tokens.join("+")}`
     }
 }
 ```
 
 ![](E:\zhufeng\vue-yuan-ma\vue_source_code\image\tokens.png)
 
-#### 通过generator将代码生成
+#### 生成`render`函数
 
 ```javascript
-function generate(el) {
-    // 将孩子属性区分开来
-    let children = getChildren(el);
-    let code = `_c('${el.tag}',${
-        el.attrs.length?`${genProps(el.attrs)}`:'undefined'
-    }${
-        children? `,${children}`:''
-    })`;
-    return code;
+export function compileToFunctions(template) {
+    let root = parseHTML(template);
+    let code = generate(root);
+    let render = `with(this){return ${code}}`;
+    let renderFn = new Function(render);
+    return renderFn
 }
-let code = generate(root);
 ```
 
-#### getChildren
 
-
-
-#### genProps
 
 ### 5.生成`vnode`虚拟dom
+
+> 在原型上_render 方法，并
+
+```javascript
+export function renderMixin(Vue){
+   	Vue.prototype._render = function(){
+        const vm = this;
+        const {render} = vm.$options;
+        // 虚拟dom就是 render函数的调用
+	    let vnode = render.call(vm)
+        return vnode;
+    }
+}
+```
+
+
 
 ![](E:\zhufeng\vue-yuan-ma\vue_source_code\image\虚拟dom.png)
 
@@ -574,21 +671,120 @@ let code = generate(root);
 
 ## 四、创建渲染watcher
 
-### 1.初始化渲染Watcher
+### 2.生成虚拟`dom`的过程就是调用render函数， _c  _v _s 的方法，生成对象
 
-### 2.生成虚拟`dom`
+```javascript
+// 在renderMinxin中
+export function renderMixin(Vue){
+    Vue.prototype._c = function(Vue){
+        // _v 通过createNode转换成元素
+        return createNode(text);
+    }
+    Vue.prototype._v =  function(Vue){
+        return createElement(...arguments);
+    }
+    Vue.prototype._s = function(val){
+        return val == null ? "" : (typeof val == 'object' ? JSON.stringify(val) : val);
+    }
+}
+```
 
-### 3.生成真实`DOM`元素
+#### 创建元素节点、创建文本节点
 
-### 4.
+从5个属性描述当前的vnode
+
+> tag, data , key, children, text
+
+```javascript
+export function createElement(tag, data = {}, ...children){
+    return vnode(tag, data, key ,children);
+}
+export function createTextNode(text){
+    return vnode(undefined,undefined,undefined,undefined,text)
+}
+function vnode(tag, data, key, children, text){
+    return {
+        tag,
+        data,
+        key,
+        children,
+        text
+    }
+}
+```
+
+### 1.初始化渲染Watcher 在 **lifecycle.js**中
+
+```javascript
+export function lifecycleMixin() {
+    Vue.prototype._update = function (vnode) {}
+}
+export function mountComponent(vm, el) {
+    vm.$el = el;
+    let updateComponent = () => {
+        // 将虚拟节点 渲染到页面上
+        vm._update(vm._render());
+    }
+    new Watcher(vm, updateComponent, () => {}, true);
+}
+```
+
+
+
+- 先调用`_render`方法生成虚拟`dom`,通过`_update`方法将虚拟`dom`创建成真实的`dom`
+
+### 生成真实`DOM`元素, 生成真是dom， 最重要的是通过patch方法，第一次用生成的虚拟dom替换真实dom，第二次需dom虚拟节点diff再替换
+
+```javascript
+export function lifecycleMixin() {
+    Vue.prototype._update = function (vnode) 
+    	  const vm = this;
+           vm.$el = patch(vm.$el,vnode);        
+    }
+}
+```
+
+#### 在patch.js中，主要用`createElm方法创建真实的dom`
+
+```javascript
+export function patch(oldVnode,vnode){
+    const isRealElement = oldVnode.nodeType;
+    if(isRealElement){
+        const oldElm = oldVnode;
+        // 获取用户的根节点的父节点，这就是为甚vue，只能写 一个根的原因
+        const parentElm = oldElm.parentNode;
+        // 通过 createElm 创建真实的dom
+        let el = createElm(vnode);
+    }
+}
+```
 
 ## 五、生命周期的合并
 
 ### 1.Mixin原理
 
+```javascript
+import { mergeOptions } from "../util/index.js";
+export function initGlobalAPI(Vue){
+    Vue.options = {};
+    Vue.mixin = function (mixin){
+        this.options = mergeOptions(this.options, mixin);
+        return this;
+    }
+}
+```
+
 ### 2.合并生命周期
 
+```javascript
+
+```
+
+
+
 ### 3.4.调用生命周期
+
+
 
 ### 4.初始化流程中调用生命周期
 

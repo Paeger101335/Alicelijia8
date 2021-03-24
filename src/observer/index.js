@@ -53,7 +53,7 @@ function defineReactvie(data, key, value) {
             dependArray(value);
           }
         }
-        console.log("dep", dep.subs);
+        // console.log("dep", dep.subs);
       }
       return value;
     },

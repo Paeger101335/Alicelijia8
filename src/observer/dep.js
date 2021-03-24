@@ -14,9 +14,9 @@ class Dep {
     }
   }
   notify() {
-    console.log("dep-notify", this.subs);
+    // console.log("dep-notify", this.subs);
     this.subs.forEach((watcher) => {
-      console.log("watcher-update", watcher);
+      // console.log("watcher-update", watcher);
       watcher.update();
     });
   }
@@ -28,7 +28,7 @@ let stack = [];
 export function pushTarget(watcher) {
   Dep.target = watcher;
   stack.push(watcher);
-  console.log("stack", Dep.target, stack);
+  // console.log("stack", Dep.target, stack);
 }
 export function popTarget() {
   stack.pop();

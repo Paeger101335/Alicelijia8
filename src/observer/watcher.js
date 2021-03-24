@@ -25,7 +25,7 @@ class Watcher {
   }
   update() {
     // 等待着，一起来更新，因为每次调用update的时候 都放入了watcher
-    console.log("this.id", this.id);
+    // console.log("this.id", this.id);
     this.get();
     // queueWatcher(this);
   }

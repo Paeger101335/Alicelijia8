@@ -26,6 +26,7 @@
         el: "#app",
         data() {
           return {
+            a:33433,
             name: "jiajia",
             age: 28,
             school: {
@@ -38,7 +39,7 @@
         computed() {},
         watch() {},
         beforeCreate() {
-          // console.log("user1", this.age);
+          console.log("user1", this.age);
         },
         created() {
           // console.log("user2", this.age, this.$el);
@@ -56,15 +57,6 @@
         // 希望数据变化可以自动的重新执行我们渲染watcher
         // vm._update(vm._render());
       }, 1000);
-      // vm._data.school.mid = { name: "bobo" };//...vm._data
-      // vm._data.school = {
-      //   ...vm._data.school,
-      //   small: "小学",
-      // };
-      // console.log(
-      //   "原有的数组join方法",
-      //   vm.hobbies.filter((item) => item.like !== "打多多")
-      // );
       // console.log("vm", vm._data, vm.hobbies.push({ small: "小学" })); //此时data的属性都变为了响应式的
     </script>
   </body>

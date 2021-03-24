@@ -74,6 +74,8 @@ export function generate(el) {
   let code = `_c('${el.tag}',${
     el.attrs.length ? `${genProps(el.attrs)}` : "undefined"
   }${children ? `,${children}` : ""})`;
-  console.log("code", code);
+  // console.log("code", code);
   return code;
 }
+
+

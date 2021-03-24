@@ -65,7 +65,7 @@ function parseHTML(html) {
     }
     let text;
     if (textEnd >= 0) {
-      console.log("文本",text)
+      // console.log("文本",text)
       text = html.substring(0, textEnd);
     }
     if (text) {
@@ -98,7 +98,7 @@ function parseHTML(html) {
       }
     }
   }
-  console.log("root",root)
+  // console.log("root",root)
   return root;
 }
 export function compileToFunctions(template) {
